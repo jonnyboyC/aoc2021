@@ -1,9 +1,9 @@
 import std.io.fs:{File};
 
-let data = [];
-for line in File.readAllText('input.txt').split('\n') {
-  data.push(Number.parse(line));
-}
+let data = File.readAllText('input.txt')
+  .split('\n')
+  .map(Number.parse)
+  .into(List.collect);
 
 fn solution1(data) {
   data
