@@ -1,7 +1,7 @@
 import std.io.fs:{File};
 
 let data = [];
-for line in File.readAllText('/Users/johnchabot/code/aoc2021/day1/input.txt').split('\n') {
+for line in File.readAllText('input.txt').split('\n') {
   data.push(Number.parse(line));
 }
 
