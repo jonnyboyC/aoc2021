@@ -1,0 +1,64 @@
+import std.io.fs:{File};
+
+class Position {
+  init() {
+    self.horizontal = 0;
+    self.vertical = 0;
+    self.aim = 0;
+  }
+
+  execCommand1(command) {
+    self.horizontal += command.horizontal;
+    self.vertical += command.vertical;
+  }
+
+  execCommand2(command) {
+    self.aim += command.vertical;
+    self.horizontal += command.horizontal;
+    self.vertical += command.horizontal * self.aim;
+  }
+}
+
+class Command {
+  init(horizontal, vertical) {
+    self.horizontal = horizontal;
+    self.vertical = vertical;
+  }
+}
+
+let factory = {
+  'forward': |amt| Command(amt, 0),
+  'up': |amt| Command(0, -amt),
+  'down': |amt| Command(0, amt),
+};
+
+fn parse(line) {
+  let split = line.split(' ').into(List.collect);
+  let command = split[0];
+  let amt = Number.parse(split[1]);
+
+  factory[command](amt)
+}
+
+let commands = File.readAllText('input.txt')
+  .split('\n')
+  .map(parse)
+  .into(List.collect);
+
+fn solution1(commands) {
+  let position = Position();
+
+  commands.iter().each(|command| position.execCommand1(command));
+  position.horizontal * position.vertical
+}
+
+
+fn solution2(commands) {
+  let position = Position();
+
+  commands.iter().each(|command| position.execCommand2(command));
+  position.horizontal * position.vertical
+}
+
+print('Solution 1: ${solution1(commands)}');
+print('Solution 2: ${solution2(commands)}');
