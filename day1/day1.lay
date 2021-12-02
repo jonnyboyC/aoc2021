@@ -1,0 +1,34 @@
+import std.io.fs:{File};
+
+let data = [];
+for line in File.readAllText('/Users/johnchabot/code/aoc2021/day1/input.txt').split('\n') {
+  data.push(Number.parse(line));
+}
+
+fn solution1(data) {
+  data
+    .slice(0, data.len() - 1).iter()
+    .zip(data.slice(1).iter())
+    .reduce(0, |total, pair| pair[0] < pair[1] ? total + 1 : total)
+}
+
+fn solution2(data) {
+  let lastSum = data[0] + data[1] + data[2];
+
+  data
+    .slice(1, data.len() - 2).iter()
+    .zip(
+      data.slice(2, data.len() - 1).iter(),
+      data.slice(3, data.len() - 0).iter(),
+    )
+    .reduce(0, |total, triplet| {
+      let sum = triplet[0] + triplet[1] + triplet[2];
+      let larger = sum > lastSum;
+      lastSum = sum;
+
+      larger ? total + 1 : total
+    })
+}
+
+print(solution1(data));
+print(solution2(data));
