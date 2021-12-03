@@ -1,0 +1,77 @@
+import std.io.fs:{File};
+import std.math:{pow};
+
+let data = File.readAllText('input.txt')
+  .split('\n')
+  .map(|line| line
+    .iter()
+    .map(Number.parse)
+    .into(List.collect)
+  )
+  .into(List.collect);
+
+fn toDecimal(bitList) {
+  let sum = 0;
+  for i in bitList.len().times() {
+    sum += bitList[i] * pow(2, bitList.len() - i - 1);
+  }
+
+  sum
+}
+
+fn mostCommonBit(data, index) {
+  let sum = data.iter().reduce(0, |acc, entry| acc + entry[index]);
+  sum >= data.len() / 2  ? 1 : 0
+}
+
+fn flip(bit) { bit == 0 ? 1 : 0 }
+
+fn gamma(data) {
+  let result = [];
+  for i in data[0].len().times() {
+    result.push(mostCommonBit(data, i));
+  }
+
+  toDecimal(result)
+}
+
+fn epsilon(data) {
+  let result = [];
+  for i in data[0].len().times() {
+    result.push(flip(mostCommonBit(data, i)));
+  }
+
+  toDecimal(result)
+}
+
+fn oxygen(data, index) {
+  if data.len() == 1 {
+    return toDecimal(data[0]);
+  }
+
+  let keepBit = mostCommonBit(data, index);
+  let subSet = data.iter().filter(|entry| entry[index] == keepBit).into(List.collect);
+
+  oxygen(subSet, index + 1)
+}
+
+fn carbonDioxide(data, index) {
+  if data.len() == 1 {
+    return toDecimal(data[0]);
+  }
+
+  let keepBit = flip(mostCommonBit(data, index));
+  let subSet = data.iter().filter(|entry| entry[index] == keepBit).into(List.collect);
+  carbonDioxide(subSet, index + 1)
+}
+
+fn solution1(data) {
+  gamma(data) * epsilon(data)
+}
+
+fn solution2(data) {
+  oxygen(data, 0) * carbonDioxide(data, 0)
+}
+
+print('Solution 1: ${solution1(data)}');
+print('Solution 2: ${solution2(data)}');
