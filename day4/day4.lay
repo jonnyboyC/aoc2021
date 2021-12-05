@@ -1,0 +1,166 @@
+import std.io.fs:{File};
+import std.regexp:{RegExp};
+
+let lines = File.readAllText('input.txt')
+  .split('\n')
+  .into(List.collect);
+
+let tableSize = 5;
+
+class Table {
+  init(entries, rows, columns) {
+    self.entries = entries;
+    self.rows = rows;
+    self.columns = columns;
+  }
+
+  str() {
+    self.entries.iter().reduce('', |str, row| '${str}${row[0]} ${row[1]} ${row[2]} ${row[3]} ${row[4]}\n')
+  }
+
+  sumUnmarked() {
+    let sum = 0;
+    for row in self.entries {
+      for entry in row {
+        if !entry.marked {
+          sum += entry.value;
+        }
+      }
+    }
+
+    sum
+  }
+
+  mark(value) {
+    for row in tableSize.times() {
+      for column in tableSize.times() {
+        if self.entries[row][column].mark(value) {
+          if (self.rows[row] += 1) == 5 { return true; }
+          if (self.columns[column] += 1) == 5 { return true; }
+
+          return false;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  reset() {
+    for row in self.entries {
+      for entry in row {
+        entry.reset();
+      }
+    }
+
+    self.rows = [0, 0, 0, 0, 0];
+    self.columns = [0, 0, 0, 0, 0];
+    self
+  }
+
+  static buildFromRowLists(rowLists) {
+    let entries = rowLists
+      .iter()
+      .map(|row| row.iter()
+        .map(|entry| TableEntry(entry))
+        .into(List.collect)
+      )
+      .into(List.collect);
+    let rows = [0, 0, 0, 0, 0];
+    let columns = [0, 0, 0, 0, 0];
+
+    Table(entries, columns, rows)
+  }
+}
+
+class TableEntry {
+  init(value) {
+    self.value = value;
+    self.marked = false;
+  }
+
+  str() {
+    self.marked ? '*${self.value}' : self.value.str()
+  }
+
+  mark(value) {
+    if self.marked {
+      return false;
+    }
+
+    self.marked = self.value == value
+  }
+
+  reset() {
+    self.marked = false;
+  }
+}
+
+fn parse(lines) {
+  let sequence = lines[0].split(',').map(Number.parse).into(List.collect);
+  let rowPattern = RegExp('(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)');
+
+  let cursor = 2;
+  let slice = lines.slice(cursor, cursor + tableSize);
+  let tables = [];
+
+  while slice.len() == tableSize {
+    let rowLists = slice.iter()
+      .map(|row| {
+        let parsedRow = rowPattern.captures(row);
+        assertEq(parsedRow.len(), tableSize + 1);
+        parsedRow.slice(1).iter().map(Number.parse).into(List.collect)
+      })
+      .into(List.collect);
+
+    assertEq(rowLists.len(), tableSize);
+    tables.push(Table.buildFromRowLists(rowLists));
+
+    cursor += tableSize + 1;
+    slice = lines.slice(cursor, cursor + tableSize);
+  }
+
+  {
+    'sequence': sequence,
+    'tables': tables
+  }
+}
+
+fn solution1(sequence, tables) {
+  for value in sequence {
+    for table in tables {
+      if table.mark(value) {
+        return table.sumUnmarked() * value;
+      }
+    }
+  }
+
+  assert(false);
+}
+
+fn solution2(sequence, tables) {
+  let finalScores = [];
+
+  for value in sequence {
+    let newTables = [];
+
+    for table in tables {
+      if table.mark(value) {
+        finalScores.push(table.sumUnmarked() * value);
+      } else {
+        newTables.push(table);
+      }
+    }
+
+    tables = newTables;
+  }
+
+  finalScores[finalScores.len() - 1]
+}
+
+let input = parse(lines);
+let sequence = input['sequence'];
+let tables = input['tables'];
+
+print('Solution 1: ${solution1(sequence, tables)}');
+print('Solution 2: ${solution2(sequence, tables.iter().map(|t| t.reset()).into(List.collect))}');
