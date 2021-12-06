@@ -1,0 +1,35 @@
+import std.io.fs:{File};
+
+let fishClocks = File.readAllText('input.txt')
+  .split(',')
+  .map(Number.parse)
+  .toList();
+
+fn groupFish(fishClocks) {
+  let counts = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+  for fishClock in fishClocks {
+    counts[fishClock] += 1;
+  }
+
+  counts
+}
+
+fn solution1(fishGroups, steps) {
+  let updatedFishGroups = fishGroups.slice();
+
+  for _ in steps.times() {
+    let cycleCount = updatedFishGroups[0];
+    updatedFishGroups = updatedFishGroups.slice(1);
+
+    updatedFishGroups.push(cycleCount);
+    updatedFishGroups[6] += cycleCount;
+    print(updatedFishGroups);
+  }
+
+  updatedFishGroups.iter().reduce(0, |acc, curr| acc + curr)
+}
+
+let fishGroups = groupFish(fishClocks);
+print(solution1(fishGroups, 80));
+print(solution1(fishGroups, 256));
