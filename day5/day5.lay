@@ -1,0 +1,167 @@
+import std.io.fs:{File};
+import std.regexp:{RegExp};
+import std.math:{abs};
+
+fn max(a, b) { a > b ? a : b }
+fn min(a, b) { a < b ? a : b }
+
+class Point {
+  init(x, y) {
+    self.x = x;
+    self.y = y;
+  }
+
+  maxCoordinate() { max(self.x, self.y) }
+  str() { '${self.x},${self.y}' }
+}
+
+class Line {
+  init(p1, p2) {
+    self.p1 = p1;
+    self.p2 = p2;
+  }
+
+  maxCoordinate() {
+    let p1Max = self.p1.maxCoordinate();
+    let p2Max = self.p2.maxCoordinate();
+
+    max(p1Max, p2Max)
+  }
+
+  markGrid(grid) {
+    let p1 = self.p1;
+    let p2 = self.p2;
+
+    if self.horizontal() {
+      for x in self.xIter() {
+        grid.mark(x, p1.y);
+      }
+    }
+
+    if self.vertical() {
+      for y in self.yIter() {
+        grid.mark(p1.x, y);
+      }
+    }
+
+    if self.diagonal() {
+      for pair in self.xIter().zip(self.yIter()) {
+        grid.mark(pair[0], pair[1]);
+      }
+    }
+  }
+  str() { '${self.p1}->${self.p2}' }
+
+  xIter() {
+    let p1 = self.p1;
+    let p2 = self.p2;
+
+    if self.p2.x - self.p1.x > 0 {
+      return (p1.x).until(p2.x + 1);
+    } else {
+      return (p2.x).until(p1.x + 1).into(List.collect).rev().iter();
+    }
+  }
+  yIter() {
+    let p1 = self.p1;
+    let p2 = self.p2;
+
+    if self.p2.y - self.p1.y > 0 {
+      return (p1.y).until(p2.y + 1);
+    } else {
+      return (p2.y).until(p1.y + 1).into(List.collect).rev().iter();
+    }
+  }
+  diagonal() { abs(self.p1.y - self.p2.y) == abs(self.p1.x - self.p2.x) }
+  horizontal() { self.p1.y == self.p2.y }
+  vertical() { self.p1.x == self.p2.x }
+}
+
+class Grid {
+  init(rows) {
+    self.rows = rows;
+  }
+
+  mark(x, y) {
+    self.rows[y][x] += 1;
+  }
+
+  str() {
+    self.rows.str();
+  }
+
+  static withSize(n) {
+    let rows = n.times()
+      .map(|x| n.times().map(|x| 0).into(List.collect))
+      .into(List.collect);
+
+    Grid(rows)
+  }
+}
+
+fn gridSize(lines) {
+  let max = 0;
+  for line in lines {
+    if line.maxCoordinate() > max {
+      max = line.maxCoordinate();
+    }
+  }
+
+  max + 1
+}
+
+let linePattern = RegExp('(\\d+),(\\d+) -> (\\d+),(\\d+)');
+
+let lines = File.readAllText('input.txt')
+  .split('\n')
+  .map(|line| {
+    let captures = linePattern.captures(line);
+    assertNe(captures, nil);
+    let values = captures.slice(1).iter().map(Number.parse).into(List.collect);
+    Line(Point(values[0], values[1]), Point(values[2], values[3]))
+  })
+  .into(List.collect);
+
+fn solution1(lines) {
+  let grid = Grid.withSize(gridSize(lines));
+
+  for line in lines.iter().filter(|line| line.vertical() or line.horizontal()) {
+    line.markGrid(grid);
+  }
+
+  let sum = 0;
+  for row in grid.rows {
+    for cell in row {
+      if cell >= 2 {
+        sum += 1;
+      }
+    }
+  }
+
+  sum
+}
+
+fn solution2(lines) {
+  let grid = Grid.withSize(gridSize(lines));
+
+  for line in lines {
+    line.markGrid(grid);
+  }
+
+  let sum = 0;
+  for row in grid.rows {
+    for cell in row {
+      if cell >= 2 {
+        sum += 1;
+      }
+    }
+  }
+
+  sum
+}
+
+let s1 = solution1(lines);
+let s2 = solution2(lines);
+
+print('Solution 1: ${s1}');
+print('Solution 2: ${s2}');
