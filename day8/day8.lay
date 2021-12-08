@@ -1,0 +1,147 @@
+import std.io.fs:{File};
+import std.math:{max, abs};
+
+let segementLetters = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
+
+let segmentToNumbers = {
+  2: [1],
+  3: [7],
+  4: [4],
+  5: [2, 3, 5],
+  6: [0, 6, 9],
+  7: [8],
+};
+
+let numbersToSegmentLetters = {
+  0: ['a', 'b', 'c', 'e', 'f', 'g'],
+  1: ['c', 'f'],
+  2: ['a', 'c', 'd', 'e', 'g'],
+  3: ['a', 'c', 'd', 'f', 'g'],
+  4: ['b', 'c', 'd', 'f'],
+  5: ['a', 'b', 'd', 'f', 'g'],
+  6: ['a', 'b', 'd', 'e', 'f', 'g'],
+  7: ['a', 'c', 'f'],
+  8: ['a', 'b', 'c', 'd', 'e', 'f', 'g'],
+  9: ['a', 'b', 'c', 'd', 'f', 'g']
+};
+
+class DisplayInput {
+  init(signal, numbers) {
+    self.signal = signal;
+    self.numbers = numbers;
+  }
+}
+
+fn initSegmentMapping() {
+  segementLetters.iter().reduce({}, |map, letter| {
+    map[letter] = segementLetters.slice();
+    map
+  })
+}
+
+fn mapNumbers(segmentMap, numbers) {
+  1000 * mapSegmentsToNumber(segmentMap, numbers[0])
+    + 100 * mapSegmentsToNumber(segmentMap, numbers[1])
+    + 10 * mapSegmentsToNumber(segmentMap, numbers[2])
+    + 1 * mapSegmentsToNumber(segmentMap, numbers[3])
+}
+
+fn mapSegmentsToNumber(segmentMap, segments) {
+  let mappedSegments = segments.iter().map(|segment| segmentMap[segment]).toList();
+
+  for kvp in numbersToSegmentLetters {
+    let numberSegments = kvp[1];
+    if numberSegments.len() == mappedSegments.len() and numberSegments.len() == intersect(numberSegments, mappedSegments).len() {
+      return kvp[0];
+    }
+  }
+
+  assert(false);
+}
+
+fn intersect(l1, l2) {
+  l1.iter().filter(|x| l2.has(x)).toList()
+}
+
+fn difference(l1, l2) {
+  l1.iter().filter(|x| !l2.has(x)).toList()
+}
+
+let displayInputs = File.readAllText('input.txt')
+  .split('\n')
+  .map(|line| {
+    let split = line.split(' | ').toList();
+    let signal = split[0].split(' ').toList();
+    let numbers = split[1].split(' ').toList();
+    DisplayInput(signal, numbers)
+  })
+  .toList();
+
+fn solution1(displayInputs) {
+  displayInputs.iter()
+    .reduce(0, |total, input| {
+      total + input.numbers.iter()
+        .reduce(0, |subtotal, number| {
+          subtotal + (segmentToNumbers[number.len()].len() == 1 ? 1 : 0)
+        })
+    })
+}
+
+fn solution2(displayInputs) {
+  let sum = 0;
+  for input in displayInputs {
+    let segmentPossibilities = initSegmentMapping();
+
+    // narrow letters for known length number
+    for known in [2, 3, 4, 7] {
+      let signal = input.signal.iter().filter(|x| x.len() == known).first();
+      let number = segmentToNumbers[known][0];
+
+      for segementLetter in numbersToSegmentLetters[number] {
+        segmentPossibilities[segementLetter] = intersect(segmentPossibilities[segementLetter], signal);
+      }
+    }
+
+    // narrow letters by the possible "holes" number comprised of 6 segments
+    let sixSegmentSignals = input.signal.iter().filter(|x| x.len() == 6).toList();
+    let possibleHoles = sixSegmentSignals.iter().map(|signal| difference(segementLetters, signal)[0]).toList();
+
+    for letter in ['c', 'd', 'e'] {
+      segmentPossibilities[letter] = intersect(segmentPossibilities[letter], possibleHoles);
+    }
+
+    // at this point c is known
+    for letter in ['a', 'b', 'd', 'e', 'f', 'g'] {
+      segmentPossibilities[letter] = difference(segmentPossibilities[letter], segmentPossibilities['c']);
+    }
+
+    // at this point c, d, f are known
+    for letter in ['a', 'b', 'e', 'g'] {
+      segmentPossibilities[letter] = difference(segmentPossibilities[letter], segmentPossibilities['d']);
+      segmentPossibilities[letter] = difference(segmentPossibilities[letter], segmentPossibilities['f']);
+    }
+
+    // at this point a, b, c, d, e, f are known
+    segmentPossibilities['g'] = difference(segmentPossibilities['g'], segmentPossibilities['a']);
+    segmentPossibilities['g'] = difference(segmentPossibilities['g'], segmentPossibilities['b']);
+    segmentPossibilities['g'] = difference(segmentPossibilities['g'], segmentPossibilities['e']);
+
+    // double check we have a 1 to 1 mapping
+    for kvp in segmentPossibilities {
+      assertEq(kvp[1].len(), 1);
+    }
+
+    // create the mapping from jumbled segments to original segments
+    let segmentMapping = segmentPossibilities.iter().reduce({}, |map, kvp| {
+      map[kvp[1][0]] = kvp[0];
+      map
+    });
+
+    sum += mapNumbers(segmentMapping, input.numbers);
+  }
+
+  sum
+}
+
+print("Solution 1: ${solution1(displayInputs)}");
+print("Solution 2: ${solution2(displayInputs)}");
