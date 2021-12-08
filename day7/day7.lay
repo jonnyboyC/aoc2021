@@ -1,0 +1,57 @@
+import std.io.fs:{File};
+import std.math:{max, abs};
+
+let positions = File.readAllText('input.txt')
+  .split(',')
+  .map(Number.parse)
+  .toList();
+
+fn maxPosition(positions) {
+  positions.iter().reduce(-1, |a, b| max(a, b))
+}
+
+fn fuelConsumption(positions, location, distanceFn) {
+  positions.iter().reduce(0, |sum, curr| sum + distanceFn(curr, location))
+}
+
+fn dist1(curr, location) {
+  abs(curr - location)
+}
+
+let cache = {};
+
+fn dist2(curr, location) {
+  let dist = abs(curr - location);
+  if cache.has(dist) {
+    return cache[dist];
+  }
+
+  let sum = 0;
+  for i in 1.until(dist + 1) {
+    sum += i;
+  }
+
+  cache[dist] = sum;
+  sum
+}
+
+fn solutions(positions, distanceFn) {
+  let max = maxPosition(positions);
+
+  let minFuel = nil;
+  let minLocation = nil;
+
+  for location in max.times() {
+    let fuelUse = fuelConsumption(positions, location, distanceFn);
+
+    if !minFuel or fuelUse < minFuel {
+      minFuel = fuelUse;
+      minLocation = location;
+    }
+  }
+
+  minFuel
+}
+
+print("Solution 1: ${solutions(positions, dist1)}");
+print("Solution 2: ${solutions(positions, dist2)}");
