@@ -1,0 +1,161 @@
+import std.io.fs:{File};
+import std.math:{min};
+
+let grid = File.readAllText('input.txt')
+  .split('\n')
+  .map(|line| line.iter().map(Number.parse).toList())
+  .toList();
+
+class Point {
+  init(value, row, column, id) {
+    self.value = value;
+    self.row = row;
+    self.column = column;
+    self.basinId = nil;
+    self.id = id;
+  }
+
+  isLowPoint() {
+    self.basinId == self.id
+  }
+
+  isMarked() {
+    self.basinId != nil
+  }
+
+  str() {
+    "\"${self.basinId == nil ? " " : "*"}${self.value}\""
+  }
+
+  markLowPoint() {
+    self.basinId = self.id;
+  }
+
+  markBasin(id) {
+    self.basinId = id
+  }
+}
+
+fn surroundingPoints(grid, row, column) {
+  let surroundingPoints = [];
+
+  if row != 0 {
+    surroundingPoints.push(grid[row - 1][column]);
+  }
+  if row != grid.len() - 1 {
+    surroundingPoints.push(grid[row + 1][column]);
+  }
+
+  if column != 0 {
+    surroundingPoints.push(grid[row][column - 1]);
+  }
+  if column != grid[0].len() - 1 {
+    surroundingPoints.push(grid[row][column + 1]);
+  }
+
+  surroundingPoints
+}
+
+fn isLowPoint(grid, row, column) {
+  let currentPoint = grid[row][column];
+  let points = surroundingPoints(grid, row, column);
+
+  points.iter().all(|point| point.value > currentPoint.value)
+}
+
+fn markLowPoints(grid) {
+  for row in grid.len().times() {
+    for column in grid[0].len().times() {
+      if isLowPoint(grid, row, column) {
+        grid[row][column].markLowPoint();
+      }
+    }
+  }
+}
+
+fn connectBasins(grid) {
+  let lowPoints = [];
+
+  for row in grid {
+    for point in row {
+      if point.isLowPoint() {
+        lowPoints.push(point);
+      }
+    }
+  }
+
+  for lowPoint in lowPoints {
+    let lowPointId = lowPoint.id;
+    let basinPoints = surroundingPoints(grid, lowPoint.row, lowPoint.column).iter().filter(|p| p.value != 9 and !p.isMarked()).toList();
+
+    while basinPoints.len() != 0 {
+      let basinPoint = basinPoints.pop();
+      if basinPoint.isMarked() {
+        continue;
+      }
+
+      basinPoint.markBasin(lowPointId);
+
+      for point in surroundingPoints(grid, basinPoint.row, basinPoint.column).iter().filter(|p| p.value != 9 and !p.isMarked()) {
+        basinPoints.push(point);
+      }
+    }
+  }
+}
+
+fn parseGrid(grid) {
+  let id = 0;
+  let pointGrid = [];
+  for row in grid.len().times() {
+    let pointRow = [];
+    for column in grid[0].len().times() {
+      let value = grid[row][column];
+      pointRow.push(Point(value, row, column, id += 1));
+    }
+
+    pointGrid.push(pointRow);
+  }
+
+  markLowPoints(pointGrid);
+  connectBasins(pointGrid);
+
+  pointGrid
+}
+
+fn solution1(pointGrid) {
+  let sum = 0;
+
+  for row in pointGrid {
+    for point in row {
+      if point.isLowPoint() {
+        sum += point.value + 1;
+      }
+    }
+  }
+
+  sum
+}
+
+fn solution2(grid) {
+  let basinSizes = {};
+
+  for row in pointGrid {
+    for point in row {
+      if point.basinId {
+        if basinSizes.has(point.basinId) {
+          basinSizes[point.basinId] += 1;
+        } else {
+          basinSizes[point.basinId] = 1;
+        }
+      }
+    }
+  }
+
+  let largest = basinSizes.iter().map(|kvp| kvp[1]).toList().sort(|a, b| b - a).slice(0, 3);
+  largest[0] * largest[1] * largest[2]
+}
+
+let pointGrid = parseGrid(grid);
+
+print("Solution 1: ${solution1(pointGrid)}");
+print("Solution 2: ${solution2(pointGrid)}");
