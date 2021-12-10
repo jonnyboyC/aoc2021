@@ -1,0 +1,112 @@
+import std.io.fs:{File};
+
+let lines = File.readAllText('input.txt')
+  .split('\n')
+  .toList();
+
+let invalidScore = {
+  ')': 3,
+  ']': 57,
+  '}': 1197,
+  '>': 25137
+};
+
+let closingScore = {
+  ')': 1,
+  ']': 2,
+  '}': 3,
+  '>': 4
+};
+
+let pairs = {
+  '(': ')',
+  '[': ']',
+  '{': '}',
+  '<': '>',
+};
+
+class Pairs {
+  init() {
+    self.pairs = [];
+  }
+
+  isNextInvalid(token) {
+    if pairs.has(token) {
+      self.pairs.push(token);
+      return false;
+    } else {
+      let pair = self.pairs.pop();
+
+      if !pair {
+        return true;
+      }
+
+      let closingPair = pairs[pair];
+      if token != closingPair {
+        return true;
+      }
+
+      return false;
+    }
+  }
+
+  closing() {
+    let closingPairs = [];
+    while self.pairs.len() != 0 {
+      closingPairs.push(pairs[self.pairs.pop()]);
+    }
+
+    closingPairs
+  }
+}
+
+fn solution1(lines) {
+  let sum = 0;
+
+  for line in lines {
+    let pairs = Pairs();
+
+    for token in line {
+      if pairs.isNextInvalid(token) {
+        sum += invalidScore[token];
+        break;
+      }
+    }
+  }
+
+  sum
+}
+
+fn solution2(lines) {
+  let totals = [];
+
+  for line in lines {
+    let pairs = Pairs();
+    let sum = 0;
+    let next = false;
+
+    for token in line {
+      if pairs.isNextInvalid(token) {
+        next = true;
+        break;
+      }
+    }
+
+    if next {
+      continue;
+    }
+
+    for token in pairs.closing() {
+      sum *= 5;
+      sum += closingScore[token];
+    }
+
+    totals.push(sum);
+  }
+
+  totals = totals.sort(|a, b| a - b);
+  totals[(totals.len() - 1) / 2]
+}
+
+print("Solution 1: ${solution1(lines)}");
+print("Solution 2: ${solution2(lines)}");
