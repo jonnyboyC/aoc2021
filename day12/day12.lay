@@ -1,0 +1,94 @@
+import std.io.fs:{File};
+
+let start = 'start';
+let end = 'end';
+
+
+class Graph {
+  init() {
+    self.visited = {};
+    self.endCaves = { start: true, end: true };
+    self.smallCaves = {};
+    self.adjList = {};
+  }
+
+  markSmall(node) {
+    if self.endCaves.has(node) {
+      return;
+    }
+
+    self.smallCaves[node] = true;
+  }
+
+  addEdge(node1, node2) {
+    if !self.adjList.has(node1) {
+      self.adjList[node1] = [];
+      self.visited[node1] = 0;
+    }
+    if !self.adjList.has(node2) {
+      self.adjList[node2] = [];
+      self.visited[node2] = 0;
+    }
+
+    self.adjList[node1].push(node2);
+    self.adjList[node2].push(node1);
+  }
+
+  canVisit(node, max) {
+    if self.endCaves.has(node) {
+      return self.visited[node] == 0;
+    }
+
+    if self.smallCaves.has(node) {
+      if self.visited[node] == 0 {
+        return true;
+      }
+
+      return self.visited.iter().all(|kvp| self.smallCaves.has(kvp[0]) ? kvp[1] < max : true);
+    }
+
+    true
+  }
+
+  traverse(node, maxSmall) {
+    if node == end {
+      return 1;
+    }
+
+    let fullRoutes = 0;
+    self.visited[node] += 1;
+
+    for neighboorNode in self.adjList[node] {
+      if self.canVisit(neighboorNode, maxSmall) {
+        fullRoutes += self.traverse(neighboorNode, maxSmall);
+      }
+    }
+    self.visited[node] -= 1;
+
+    fullRoutes
+  }
+}
+
+let graph = Graph();
+
+let lines = File.readAllText('input.txt')
+  .split('\n')
+  .each(|line| {
+    let pair = line.split('-').list();
+    assertEq(pair.len(), 2);
+
+    let node1 = pair[0];
+    let node2 = pair[1];
+
+    graph.addEdge(node1, node2);
+    if node1.downCase() == node1 {
+      graph.markSmall(node1);
+    }
+    if node2.downCase() == node2 {
+      graph.markSmall(node2);
+    }
+  });
+
+
+print("Solution 1: ${graph.traverse(start, 1)}");
+print("Solution 2: ${graph.traverse(start, 2)}");
