@@ -1,0 +1,177 @@
+import std.io.fs:{File};
+import std.math:{min, max};
+
+let lines = File.readAllText('input.txt')
+  .split('\n')
+  .toList();
+
+class Octopus {
+  init(value, row, column) {
+    self.value = value;
+    self.row = row;
+    self.column = column;
+    self.flash = false;
+  }
+
+  str() {
+    '${self.row},${self.column} value:${self.value} flash:${self.flash}'
+  }
+
+  step() {
+    self.value += 1;
+    self.flash = self.value > 9
+  }
+
+  finish() {
+    if self.flash {
+      self.value = 0;
+      self.flash = false;
+    }
+  }
+
+  inc() {
+    self.value += 1;
+    let willFlash = !self.flash and self.value > 9;
+    if willFlash {
+      self.flash = true;
+    }
+
+    willFlash
+  }
+}
+
+
+fn surroundingPoints(grid, row, column) {
+  let surroundingPoints = [];
+
+  for rowIdx in max(0, row - 1).until(min(row + 2, grid.len())) {
+    for columnIdx in max(0, column - 1).until(min(column + 2, grid[0].len())) {
+      surroundingPoints.push(grid[rowIdx][columnIdx]);
+    }
+  }
+
+  surroundingPoints
+}
+
+fn printGrid(grid) {
+  let str = '';
+  for row in grid {
+    for octopus in row {
+      str += "${octopus.value > 9 ? 9 : octopus.value}";
+    }
+
+    str += '\n';
+  }
+
+  print(str);
+}
+
+fn parse(lines) {
+  let row = 0;
+  let rows = [];
+
+  for line in lines {
+    let column = 0;
+    let columns = [];
+
+    for value in line {
+      columns.push(Octopus(Number.parse(value), row, column));
+      column += 1;
+    }
+
+    row += 1;
+    rows.push(columns);
+  }
+
+  rows
+}
+
+fn solution1(grid) {
+  let flashes = 0;
+
+  printGrid(grid);
+  for step in 100.times() {
+    let flashQueue = [];
+
+    for row in grid {
+      for octopus in row {
+        if octopus.step() {
+          flashQueue.push(octopus);
+          flashes += 1;
+        }
+      }
+    }
+
+    while flashQueue.len() != 0 {
+      let flashingOctopus = flashQueue.pop();
+      for octopus in surroundingPoints(grid, flashingOctopus.row, flashingOctopus.column) {
+        if octopus.inc() {
+          flashQueue.push(octopus);
+          flashes += 1;
+        }
+      }
+    }
+
+    for row in grid {
+      for octopus in row {
+        octopus.finish();
+      }
+    }
+
+    printGrid(grid);
+  }
+
+  flashes
+}
+
+fn solution2(grid) {
+  let count = 0;
+
+  printGrid(grid);
+  while true {
+
+    count += 1;
+    let flashQueue = [];
+
+    for row in grid {
+      for octopus in row {
+        if octopus.step() {
+          flashQueue.push(octopus);
+        }
+      }
+    }
+
+    while flashQueue.len() != 0 {
+      let flashingOctopus = flashQueue.pop();
+      for octopus in surroundingPoints(grid, flashingOctopus.row, flashingOctopus.column) {
+        if octopus.inc() {
+          flashQueue.push(octopus);
+        }
+      }
+    }
+
+    let allFlash = true;
+    for row in grid {
+      for octopus in row {
+        if !octopus.flash {
+          allFlash = false;
+        }
+        octopus.finish();
+      }
+    }
+
+    if allFlash {
+      return count;
+    }
+
+    printGrid(grid);
+  }
+
+  assert(false);
+}
+
+let grid1 = parse(lines);
+let grid2 = parse(lines);
+
+print("Solution 1: ${solution1(grid1)}");
+print("Solution 2: ${solution2(grid2)}");
