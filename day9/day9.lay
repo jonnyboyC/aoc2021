@@ -3,8 +3,8 @@ import std.math:{min};
 
 let grid = File.readAllText('input.txt')
   .split('\n')
-  .map(|line| line.iter().map(Number.parse).toList())
-  .toList();
+  .map(|line| line.iter().map(Number.parse).list())
+  .list();
 
 class Point {
   init(value, row, column, id) {
@@ -86,7 +86,7 @@ fn connectBasins(grid) {
 
   for lowPoint in lowPoints {
     let lowPointId = lowPoint.id;
-    let basinPoints = surroundingPoints(grid, lowPoint.row, lowPoint.column).iter().filter(|p| p.value != 9 and !p.isMarked()).toList();
+    let basinPoints = surroundingPoints(grid, lowPoint.row, lowPoint.column).iter().filter(|p| p.value != 9 and !p.isMarked()).list();
 
     while basinPoints.len() != 0 {
       let basinPoint = basinPoints.pop();
@@ -151,7 +151,7 @@ fn solution2(grid) {
     }
   }
 
-  let largest = basinSizes.iter().map(|kvp| kvp[1]).toList().sort(|a, b| b - a).slice(0, 3);
+  let largest = basinSizes.iter().map(|kvp| kvp[1]).list().sort(|a, b| b - a).slice(0, 3);
   largest[0] * largest[1] * largest[2]
 }
 

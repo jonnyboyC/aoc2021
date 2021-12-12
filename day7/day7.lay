@@ -4,7 +4,7 @@ import std.math:{max, abs};
 let positions = File.readAllText('input.txt')
   .split(',')
   .map(Number.parse)
-  .toList();
+  .list();
 
 fn maxPosition(positions) {
   positions.iter().reduce(-1, |a, b| max(a, b))

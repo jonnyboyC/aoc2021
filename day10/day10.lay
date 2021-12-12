@@ -2,7 +2,7 @@ import std.io.fs:{File};
 
 let lines = File.readAllText('input.txt')
   .split('\n')
-  .toList();
+  .list();
 
 let invalidScore = {
   ')': 3,

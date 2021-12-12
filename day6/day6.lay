@@ -3,7 +3,7 @@ import std.io.fs:{File};
 let fishClocks = File.readAllText('input.txt')
   .split(',')
   .map(Number.parse)
-  .toList();
+  .list();
 
 fn groupFish(fishClocks) {
   let counts = [0, 0, 0, 0, 0, 0, 0, 0, 0];

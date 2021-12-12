@@ -3,7 +3,7 @@ import std.math:{min, max};
 
 let lines = File.readAllText('input.txt')
   .split('\n')
-  .toList();
+  .list();
 
 class Octopus {
   init(value, row, column) {

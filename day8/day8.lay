@@ -47,7 +47,7 @@ fn mapNumbers(segmentMap, numbers) {
 }
 
 fn mapSegmentsToNumber(segmentMap, segments) {
-  let mappedSegments = segments.iter().map(|segment| segmentMap[segment]).toList();
+  let mappedSegments = segments.iter().map(|segment| segmentMap[segment]).list();
 
   for kvp in numbersToSegmentLetters {
     let numberSegments = kvp[1];
@@ -60,22 +60,22 @@ fn mapSegmentsToNumber(segmentMap, segments) {
 }
 
 fn intersect(l1, l2) {
-  l1.iter().filter(|x| l2.has(x)).toList()
+  l1.iter().filter(|x| l2.has(x)).list()
 }
 
 fn difference(l1, l2) {
-  l1.iter().filter(|x| !l2.has(x)).toList()
+  l1.iter().filter(|x| !l2.has(x)).list()
 }
 
 let displayInputs = File.readAllText('input.txt')
   .split('\n')
   .map(|line| {
-    let split = line.split(' | ').toList();
-    let signal = split[0].split(' ').toList();
-    let numbers = split[1].split(' ').toList();
+    let split = line.split(' | ').list();
+    let signal = split[0].split(' ').list();
+    let numbers = split[1].split(' ').list();
     DisplayInput(signal, numbers)
   })
-  .toList();
+  .list();
 
 fn solution1(displayInputs) {
   displayInputs.iter()
@@ -103,8 +103,8 @@ fn solution2(displayInputs) {
     }
 
     // narrow letters by the possible "holes" number comprised of 6 segments
-    let sixSegmentSignals = input.signal.iter().filter(|x| x.len() == 6).toList();
-    let possibleHoles = sixSegmentSignals.iter().map(|signal| difference(segementLetters, signal)[0]).toList();
+    let sixSegmentSignals = input.signal.iter().filter(|x| x.len() == 6).list();
+    let possibleHoles = sixSegmentSignals.iter().map(|signal| difference(segementLetters, signal)[0]).list();
 
     for letter in ['c', 'd', 'e'] {
       segmentPossibilities[letter] = intersect(segmentPossibilities[letter], possibleHoles);
