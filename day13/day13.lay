@@ -1,0 +1,155 @@
+import std.io.fs:{File};
+import std.regexp:{RegExp};
+import std.math:{max};
+
+let lines = File.readAllText('input.txt')
+  .split('\n')
+  .list();
+
+fn mirror(offset, coordinate) {
+  let diff = coordinate - offset;
+  if diff < 0 {
+    return coordinate;
+  }
+
+  offset - diff
+}
+
+class Point {
+  init(x, y) {
+    self.x = x;
+    self.y = y;
+  }
+
+  hash(yBound) {
+    (self.x * yBound) + self.y
+  }
+
+  str() {
+    "${self.x},${self.y}"
+  }
+
+  foldPoint(fold) {
+    if fold.axis == 'x' {
+      return Point(mirror(fold.offset, self.x), self.y);
+    } else {
+      return Point(self.x, mirror(fold.offset, self.y));
+    }
+  }
+}
+
+class Fold {
+  init(axis, offset) {
+    self.axis = axis;
+    self.offset = offset;
+  }
+
+  str() {
+    "fold along ${self.axis}=${self.offset}"
+  }
+}
+
+class Grid {
+  init(coordinates, xBound, yBound) {
+    self.coordinates = coordinates;
+    self.xBound = xBound;
+    self.yBound = yBound;
+  }
+
+  execFold(fold) {
+    let newCoordinates = {};
+    let yBound;
+    let xBound;
+
+    if fold.axis == 'x' {
+      yBound = self.yBound;
+      xBound = fold.offset;
+    } else {
+      yBound = fold.offset;
+      xBound = self.xBound;
+    }
+
+    for kvp in self.coordinates {
+      let newPoint = kvp[1].foldPoint(fold);
+      newCoordinates[newPoint.hash(yBound)] = newPoint;
+    }
+
+    Grid(newCoordinates, xBound, yBound)
+  }
+
+  str() {
+    // assert(self.yBound * self.xBound < 10000);
+
+    let rows = [];
+    self.yBound
+      .times()
+      .map(|y| {
+        self.xBound
+          .times()
+          .map(|x| {
+            let hash = (x * self.yBound) + y;
+            self.coordinates.has(hash) ? "#" : "."
+          })
+          .reduce("", |acc, curr| "${acc}${curr}")
+      })
+      .reduce("", |acc, curr| "${acc}\n${curr}")
+  }
+}
+
+fn parse(lines) {
+  let linesIter = lines.iter();
+  let foldPattern = RegExp('fold along (x|y)=(\\d+)');
+  let points = [];
+  let folds = [];
+
+  for line in linesIter {
+    if line == '' {
+      break;
+    }
+
+    let coordinates = line.split(',').list();
+    points.push(Point(Number.parse(coordinates[0]), Number.parse(coordinates[1])));
+  }
+
+  for line in linesIter {
+    let parsedFold = foldPattern.captures(line);
+
+    folds.push(Fold(parsedFold[1], Number.parse(parsedFold[2])));
+  }
+
+  let xBound = 0;
+  let yBound = 0;
+
+  for point in points {
+    xBound = max(point.x + 1, xBound);
+    yBound = max(point.y + 1, yBound);
+  }
+
+  let coordinates = {};
+  for point in points {
+    coordinates[point.hash(yBound)] = point;
+  }
+
+  [Grid(coordinates, xBound, yBound), folds]
+}
+
+fn solution1(grid, folds) {
+  let newGrid = grid.execFold(folds[0]);
+  newGrid.coordinates.len()
+}
+
+fn solution2(grid, folds) {
+  let newGrid = grid;
+  for fold in folds {
+    newGrid = newGrid.execFold(fold);
+  }
+
+  newGrid
+}
+
+let result = parse(lines);
+let grid = result[0];
+let folds = result[1];
+
+print('Solution 1: ${solution1(grid, folds)}');
+print('Solution 2: ${solution2(grid, folds)}');
