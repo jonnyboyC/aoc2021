@@ -1,0 +1,124 @@
+import std.io.fs:{File};
+import std.regexp:{RegExp};
+import std.math:{min, max};
+
+let lines = File.readAllText('input.txt')
+  .split('\n')
+  .list();
+
+fn cloneMap(map) {
+  let clone = {};
+  for kvp in map {
+    clone[kvp[0]] = kvp[1];
+  }
+  clone
+}
+
+fn incMap(map, value, increase) {
+  if map.has(value) {
+    map[value] += increase;
+  } else {
+    map[value] = increase;
+  }
+}
+
+class Transition {
+  init(monomers, pairs) {
+    self.monomers = monomers;
+    self.pairs = pairs;
+  }
+}
+
+class Polymer {
+  init(monomers, pairs, transitionMatrix) {
+    self.monomers = monomers;
+    self.pairs = pairs;
+    self.transitionMatrix = transitionMatrix;
+  }
+
+  step() {
+    let updatedPairs = cloneMap(self.pairs);
+    let updatedMonomers = cloneMap(self.monomers);
+
+    for kvp in self.pairs {
+      let pair = kvp[0];
+      let pairQuantity = kvp[1];
+      let transition = self.transitionMatrix[pair];
+
+      for kvp in transition.pairs {
+        incMap(updatedPairs, kvp[0], kvp[1] * pairQuantity);
+      }
+
+      for kvp in transition.monomers {
+        incMap(updatedMonomers, kvp[0], kvp[1] * pairQuantity);
+      }
+    }
+
+    Polymer(updatedMonomers, updatedPairs, self.transitionMatrix)
+  }
+}
+
+fn parse(lines) {
+  let monomers = {};
+  let pairs = {};
+  let transitionMatrix = {};
+
+  let polymerLine = lines[0];
+  for i in polymerLine.len().times() {
+    let monomer = polymerLine[i];
+    let pair = polymerLine.slice(i, i + 2);
+
+    incMap(monomers, monomer, 1);
+
+    if pair.len() != 2 {
+      continue;
+    }
+
+    incMap(pairs, pair, 1);
+  }
+
+  let transitionPattern = RegExp("([A-Z]{2}) -> ([A-Z])");
+  for line in lines.slice(3) {
+    let parsedTransition = transitionPattern.captures(line);
+    let pair = parsedTransition[1];
+    let insertion = parsedTransition[2];
+
+    // new monomer added
+    let transitionMonomers = {
+      insertion: 1
+    };
+
+    // new pairs added og pair removed
+    let transitionPairs = {};
+    incMap(transitionPairs, pair[0] + insertion, 1);
+    incMap(transitionPairs, insertion + pair[1], 1);
+    incMap(transitionPairs, pair, -1);
+
+    transitionMatrix[pair] = Transition(transitionMonomers, transitionPairs);
+  }
+
+  Polymer(monomers, pairs, transitionMatrix)
+}
+
+fn solutions(polymer, steps) {
+  let newPolymer = polymer;
+  for i in steps.times() {
+    newPolymer = newPolymer.step();
+  }
+
+  let minMonomer = 1e80;
+  let maxMonomer = -1;
+
+  for kvp in newPolymer.monomers {
+    minMonomer = min(kvp[1], minMonomer);
+    maxMonomer = max(kvp[1], maxMonomer);
+  }
+
+  maxMonomer - minMonomer
+}
+
+
+let polymer = parse(lines);
+print("Solution 1: ${solutions(polymer, 10)}");
+print("Solution 1: ${solutions(polymer, 40)}");
+
